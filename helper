@@ -44,6 +44,10 @@ commands = {
         }
 
 def main(args):
+    if len(args) == 0:
+        print('Please provide arguments to helper script')
+        return 0
+
     filename = 'tasks.pkl'
     tasks = get_tasks(filename)
 
