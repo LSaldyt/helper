@@ -3,6 +3,12 @@ from collections import defaultdict
 from pprint      import pprint
 import pickle, sys
 
+from lib.schedule import get_schedule
+
+#******************************************************************************
+#  Auxillary
+#******************************************************************************
+
 def get_tasks(filename):
     try:
         with open(filename, 'rb') as infile:
@@ -15,12 +21,17 @@ def save_tasks(tasks, filename):
     with open(filename, 'wb') as outfile:
         pickle.dump(tasks, outfile)
 
-def add(tasks, taskData, duration):
+
+ #******************************************************************************
+ #  Subcommands
+ #******************************************************************************
+
+def add(tasks, schedule, taskData, duration):
     duration = int(duration)
     tasks[duration].append(taskData)
     return tasks
 
-def do(tasks, duration, overwrite=True):
+def do(tasks, schedule, duration, overwrite=True):
     duration = int(duration)
     possible = tasks[duration]
     if len(possible) == 0:
@@ -32,18 +43,31 @@ def do(tasks, duration, overwrite=True):
             tasks[duration] = possible[1:]
     return tasks
 
-def see(tasks, duration):
+def see(tasks, schedule, duration):
     duration = int(duration)
     print('Next task would be:')
     return do(tasks, duration, overwrite=False)
 
+def next(tasks, schedule):
+    pass
+
+def view(tasks, schedule):
+    pprint(tasks)
+
+#******************************************************************************
+#  Subcommand tree
+#******************************************************************************
+
 commands = {
-        'add' : add,
-        'see' : see,
-        'do'  : do
+        'view' : view,
+        'add'  : add,
+        'see'  : see,
+        'do'   : do
         }
 
 def main(args):
+    schedule = get_schedule()
+
     if len(args) == 0:
         print('Please provide arguments to helper script')
         return 0
@@ -51,14 +75,8 @@ def main(args):
     filename = 'tasks.pkl'
     tasks = get_tasks(filename)
 
-    if len(args) == 1:
-        if args[0] == 'view':
-            pprint(tasks)
-        else:
-            print('Argument {} not recognized'.format(args[0]))
-    else:
-        subCommand, *text = args
-        tasks = commands[subCommand](tasks, *text)
+    subCommand, *text = args
+    tasks = commands[subCommand](tasks, schedule, *text)
 
     save_tasks(tasks, filename)
     return 0
