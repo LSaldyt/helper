@@ -15,12 +15,13 @@ def save_tasks(tasks, filename):
     with open(filename, 'wb') as outfile:
         pickle.dump(tasks, outfile)
 
-def add(tasks, task):
-    taskData, duration = task
+def add(tasks, taskData, duration):
+    duration = int(duration)
     tasks[duration].append(taskData)
     return tasks
 
 def do(tasks, duration, overwrite=True):
+    duration = int(duration)
     possible = tasks[duration]
     if len(possible) == 0:
         print('No available tasks to be done')
@@ -32,16 +33,9 @@ def do(tasks, duration, overwrite=True):
     return tasks
 
 def see(tasks, duration):
+    duration = int(duration)
     print('Next task would be:')
     return do(tasks, duration, overwrite=False)
-
-def parse_task(text):
-    result = text.split(',')
-    if len(result) == 2:
-        data, duration = text.split(',')
-        return (data, int(duration))
-    else:
-        return int(result[0])
 
 commands = {
         'add' : add,
@@ -56,9 +50,11 @@ def main(args):
     if len(args) == 1:
         if args[0] == 'view':
             pprint(tasks)
+        else:
+            print('Argument {} not recognized'.format(args[0]))
     else:
-        subCommand, text = args
-        tasks = commands[subCommand](tasks, parse_task(text))
+        subCommand, *text = args
+        tasks = commands[subCommand](tasks, *text)
 
     save_tasks(tasks, filename)
     return 0
