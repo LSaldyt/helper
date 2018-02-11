@@ -21,6 +21,12 @@ def save_tasks(tasks, filename):
     with open(filename, 'wb') as outfile:
         pickle.dump(tasks, outfile)
 
+def get_possible(tasks, duration):
+    keys = [key for key in tasks.keys() if key <= duration]
+    if len(keys) == 0:
+        return None
+    return tasks[keys[0]]
+
 
  #******************************************************************************
  #  Subcommands
@@ -29,7 +35,6 @@ def save_tasks(tasks, filename):
 def add(tasks, schedule, taskData, duration):
     duration = int(duration)
     tasks[duration].append(taskData)
-    return tasks
 
 def do(tasks, schedule, duration, overwrite=True):
     duration = int(duration)
@@ -41,15 +46,21 @@ def do(tasks, schedule, duration, overwrite=True):
         print(possible[0])
         if overwrite:
             tasks[duration] = possible[1:]
-    return tasks
 
 def see(tasks, schedule, duration):
     duration = int(duration)
     print('Next task would be:')
-    return do(tasks, duration, overwrite=False)
+    do(tasks, schedule, duration, overwrite=False)
+
 
 def next(tasks, schedule):
-    pass
+    for duration, item in schedule:
+        if item == 'gap':
+            print('In the upcoming {}min gap, the following could occur:'.format(duration))
+            #see(tasks, schedule, duration)
+            print(get_possible(tasks, duration))
+            break
+        
 
 def view(tasks, schedule):
     pprint(tasks)
@@ -60,6 +71,7 @@ def view(tasks, schedule):
 
 commands = {
         'view' : view,
+        'next' : next,
         'add'  : add,
         'see'  : see,
         'do'   : do
@@ -76,7 +88,7 @@ def main(args):
     tasks = get_tasks(filename)
 
     subCommand, *text = args
-    tasks = commands[subCommand](tasks, schedule, *text)
+    commands[subCommand](tasks, schedule, *text)
 
     save_tasks(tasks, filename)
     return 0
