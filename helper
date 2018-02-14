@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 from collections import defaultdict
 from pprint      import pprint
-import pickle, sys
+
+import pickle, sys, os
 
 from lib.schedule import get_schedule
 from lib.task     import Task
@@ -33,9 +34,9 @@ def get_possible(tasks, duration):
  #  Subcommands
  #******************************************************************************
 
-def add(tasks, schedule, name, duration):
+def add(tasks, schedule, name, duration, precedence=5, finish=None, prereqs=''):
     duration = int(duration)
-    tasks[duration].append(Task(name, duration))
+    tasks[duration].append(Task(name, duration, precedence, finish, prereqs))
 
 def do(tasks, schedule, duration, overwrite=True):
     duration = int(duration)
@@ -66,16 +67,26 @@ def next(tasks, schedule):
 def view(tasks, schedule):
     pprint(tasks)
 
+def clear(tasks, schedule):
+    filename = 'tasks.pkl'
+    if input('Are you sure?').lower() in ['y', 'yes']:
+        if os.path.exists(filename):
+            os.remove(filename)
+        print('Tasks cleared')
+    else:
+        print('Task clear aborted')
+
 #******************************************************************************
 #  Subcommand tree
 #******************************************************************************
 
 commands = {
-        'view' : view,
-        'next' : next,
-        'add'  : add,
-        'see'  : see,
-        'do'   : do
+        'clear' : clear,
+        'view'  : view,
+        'next'  : next,
+        'add'   : add,
+        'see'   : see,
+        'do'    : do
         }
 
 def main(args):
