@@ -4,6 +4,7 @@ from pprint      import pprint
 import pickle, sys
 
 from lib.schedule import get_schedule
+from lib.task     import Task
 
 #******************************************************************************
 #  Auxillary
@@ -32,9 +33,9 @@ def get_possible(tasks, duration):
  #  Subcommands
  #******************************************************************************
 
-def add(tasks, schedule, taskData, duration):
+def add(tasks, schedule, name, duration):
     duration = int(duration)
-    tasks[duration].append(taskData)
+    tasks[duration].append(Task(name, duration))
 
 def do(tasks, schedule, duration, overwrite=True):
     duration = int(duration)
@@ -79,6 +80,7 @@ commands = {
 
 def main(args):
     schedule = get_schedule()
+    pprint(schedule)
 
     if len(args) == 0:
         print('Please provide arguments to helper script')
