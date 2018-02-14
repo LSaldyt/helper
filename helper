@@ -9,7 +9,7 @@ from lib.schedule import get_schedule
 from lib.task     import Task
 
 __home__ = expanduser("~")
-filename = __home__ + '/tasks.pkl'
+filename = __home__ + '/.tasks.pkl'
 
 
 #******************************************************************************
@@ -63,8 +63,6 @@ def see(tasks, schedule, duration):
 def todo(tasks, schedule):
     for duration, item in schedule:
         if item == 'gap':
-            #print('In the upcoming {}min gap, the following could occur:'.format(duration))
-            #see(tasks, schedule, duration)
             return get_possible(tasks, duration)
     return 'test'
 
@@ -101,7 +99,11 @@ def main(args):
 
     schedule = get_schedule()
     time, name = schedule[0]
-    print('{} in {} for {} minutes'.format(todo(tasks, schedule), name, round(time, 2)))
+    if name == 'gap':
+        task = todo(tasks, schedule)[0]
+        print('TASK {} {}m/{}m'.format(task.name, round(task.duration, 2), round(time, 2)))
+    else:
+        print('TASK {} {}m'.format(name, round(time, 2)))
 
     subCommand, *text = args
     commands[subCommand](tasks, schedule, *text)
