@@ -23,7 +23,7 @@ def get_schedule(n=20):
 
     if len(events) > 0:
         first = events[0]
-        schedule.append((duration(first), first['summary']))
+        #schedule.append((duration(first), first['summary']))
 
         now = datetime.datetime.strptime(
                 time.strftime('%Y-%m-%d %X'),

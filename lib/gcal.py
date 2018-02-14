@@ -89,7 +89,7 @@ def get_service():
 
 def get_events(service, n=10):
     now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-    print('Getting the upcoming 10 events')
+    #print('Getting the upcoming 10 events')
     eventsResult = service.events().list(
         calendarId='primary', timeMin=now, maxResults=n, singleEvents=True,
         orderBy='startTime').execute()

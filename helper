@@ -3,9 +3,14 @@ from collections import defaultdict
 from pprint      import pprint
 
 import pickle, sys, os
+from os.path import expanduser
 
 from lib.schedule import get_schedule
 from lib.task     import Task
+
+__home__ = expanduser("~")
+filename = __home__ + '/tasks.pkl'
+
 
 #******************************************************************************
 #  Auxillary
@@ -44,31 +49,29 @@ def do(tasks, schedule, duration, overwrite=True):
     if len(possible) == 0:
         print('No available tasks to be done')
     else:
-        print('Next task:')
+        print('todo task:')
         print(possible[0])
         if overwrite:
             tasks[duration] = possible[1:]
 
 def see(tasks, schedule, duration):
     duration = int(duration)
-    print('Next task would be:')
+    print('todo task would be:')
     do(tasks, schedule, duration, overwrite=False)
 
 
-def next(tasks, schedule):
+def todo(tasks, schedule):
     for duration, item in schedule:
         if item == 'gap':
-            print('In the upcoming {}min gap, the following could occur:'.format(duration))
+            #print('In the upcoming {}min gap, the following could occur:'.format(duration))
             #see(tasks, schedule, duration)
-            print(get_possible(tasks, duration))
-            break
-        
+            return get_possible(tasks, duration)
+    return 'test'
 
 def view(tasks, schedule):
     pprint(tasks)
 
 def clear(tasks, schedule):
-    filename = 'tasks.pkl'
     if input('Are you sure?').lower() in ['y', 'yes']:
         if os.path.exists(filename):
             os.remove(filename)
@@ -81,24 +84,24 @@ def clear(tasks, schedule):
 #******************************************************************************
 
 commands = {
+        'todo'  : todo,
         'clear' : clear,
         'view'  : view,
-        'next'  : next,
         'add'   : add,
         'see'   : see,
         'do'    : do
         }
 
 def main(args):
-    schedule = get_schedule()
-    pprint(schedule)
-
     if len(args) == 0:
         print('Please provide arguments to helper script')
         return 0
 
-    filename = 'tasks.pkl'
     tasks = get_tasks(filename)
+
+    schedule = get_schedule()
+    time, name = schedule[0]
+    print('{} in {} for {} minutes'.format(todo(tasks, schedule), name, round(time, 2)))
 
     subCommand, *text = args
     commands[subCommand](tasks, schedule, *text)
