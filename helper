@@ -31,7 +31,7 @@ def save_tasks(tasks, filename):
 def get_possible(tasks, duration):
     keys = [key for key in tasks.keys() if key <= duration]
     if len(keys) == 0:
-        return None
+        return []
     return tasks[keys[0]]
 
 
@@ -64,7 +64,7 @@ def todo(tasks, schedule):
     for duration, item in schedule:
         if item == 'gap':
             return get_possible(tasks, duration)
-    return 'test'
+    return None
 
 def view(tasks, schedule):
     pprint(tasks)
@@ -77,11 +77,23 @@ def clear(tasks, schedule):
     else:
         print('Task clear aborted')
 
+def done(tasks, schedule):
+    last = todo(tasks, schedule)
+    if last is None or len(last) == 0:
+        return
+    last = last[0]
+    print(last)
+    for k, v in tasks.items():
+        if last in v:
+            v.remove(last)
+            break
+
 #******************************************************************************
 #  Subcommand tree
 #******************************************************************************
 
 commands = {
+        'done'  : done,
         'todo'  : todo,
         'clear' : clear,
         'view'  : view,
@@ -98,12 +110,23 @@ def main(args):
     tasks = get_tasks(filename)
 
     schedule = get_schedule()
-    time, name = schedule[0]
-    if name == 'gap':
-        task = todo(tasks, schedule)[0]
-        print('TASK {} {}m/{}m'.format(task.name, round(task.duration, 2), round(time, 2)))
-    else:
-        print('TASK {} {}m'.format(name, round(time, 2)))
+    reprstr = 'TASK '
+    strs = []
+    for i in range(2):
+        time, name = schedule[i]
+        nextTasks = todo(tasks, schedule)
+        if name == 'gap':
+            if nextTasks is None or len(nextTasks) == 0:
+                strs.append('None ({})m'.format(round(time, 2)))
+            else:
+                task = nextTasks[0]
+                strs.append('{} {}m/{}m'.format(task.name, round(task.duration, 2), round(time, 2)))
+        else:
+            strs.append('{} {}m'.format(name, round(time, 2)))
+    reprstr += ', '.join(strs)
+    print(reprstr)
+
+    pprint(schedule)
 
     subCommand, *text = args
     commands[subCommand](tasks, schedule, *text)
