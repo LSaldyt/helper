@@ -70,9 +70,8 @@ def view(tasks, schedule):
     pprint(tasks)
 
 def clear(tasks, schedule):
-    if input('Are you sure?').lower() in ['y', 'yes']:
-        if os.path.exists(filename):
-            os.remove(filename)
+    if input('Are you sure? ').lower() in ['y', 'yes']:
+        tasks.clear()
         print('Tasks cleared')
     else:
         print('Task clear aborted')
@@ -107,6 +106,7 @@ def main(args):
         print('Please provide arguments to helper script')
         return 0
 
+    #print(filename)
     tasks = get_tasks(filename)
 
     schedule = get_schedule()
@@ -129,7 +129,9 @@ def main(args):
     pprint(schedule)
 
     subCommand, *text = args
+    print(tasks)
     commands[subCommand](tasks, schedule, *text)
+    print(tasks)
 
     save_tasks(tasks, filename)
     return 0
