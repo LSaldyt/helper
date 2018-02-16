@@ -21,7 +21,7 @@ def get_schedule(n=20):
     service = get_service()
     events  = get_events(service, n=20)
 
-    remaining = 0
+    remaining = datetime.timedelta(minutes=0)
 
     if len(events) > 0:
         first = events[0]

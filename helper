@@ -108,6 +108,14 @@ def main(args):
             return 0
 
         #print(filename)
+        def color(c):
+            return lambda s2 : '%{F' + c + '}' + s2 + '%{F-}'
+        yellow = color('#f4ff82')
+        green  = color('#b3f442')
+        red    = color('#f00')
+
+        timef = lambda t : yellow(str(round(time, 2)))
+
         tasks = get_tasks(filename)
 
         schedule, remaining = get_schedule()
@@ -118,16 +126,17 @@ def main(args):
             nextTasks = todo(tasks, schedule)
             if name == 'gap':
                 if nextTasks is None or len(nextTasks) == 0:
-                    strs.append('Free ({})m'.format(round(time, 2)))
+                    ##b3f442
+                    strs.append(green('Free') + ' ({})m'.format(timef(time)))
                 else:
                     task = nextTasks[0]
-                    strs.append('{} {}m/{}m'.format(task.name, round(task.duration, 2), round(time, 2)))
+                    strs.append(green(task.name) + '{}m/{}m'.format(timef(task.duration), timef(time)))
             else:
-                strs.append('{} {}m'.format(name, round(time, 2)))
+                strs.append(green(name) + ' {}m'.format(timef(time)))
                 if remaining > datetime.timedelta(minutes=0):
-                    strs.append('{} left'.format(remaining))
+                    strs.append(green('{} left'.format(remaining)))
                     if remaining < datetime.timedelta(minutes=5):
-                        strs.append('*URGENT*')
+                        strs.append(red('*URGENT*'))
         reprstr += ', '.join(strs)
         print(reprstr)
 
@@ -140,6 +149,7 @@ def main(args):
 
         save_tasks(tasks, filename)
     except Exception as e:
+        print(e)
         print('Scheduler Error')
         raise
     return 0
