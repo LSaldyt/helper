@@ -2,7 +2,7 @@
 from collections import defaultdict
 from pprint      import pprint
 
-import pickle, sys, os
+import datetime, pickle, sys, os
 from os.path import expanduser
 
 from lib.schedule import get_schedule
@@ -102,38 +102,46 @@ commands = {
         }
 
 def main(args):
-    if len(args) == 0:
-        print('Please provide arguments to helper script')
-        return 0
+    try:
+        if len(args) == 0:
+            print('Please provide arguments to helper script')
+            return 0
 
-    #print(filename)
-    tasks = get_tasks(filename)
+        #print(filename)
+        tasks = get_tasks(filename)
 
-    schedule = get_schedule()
-    reprstr = 'TASK '
-    strs = []
-    for i in range(2):
-        time, name = schedule[i]
-        nextTasks = todo(tasks, schedule)
-        if name == 'gap':
-            if nextTasks is None or len(nextTasks) == 0:
-                strs.append('None ({})m'.format(round(time, 2)))
+        schedule, remaining = get_schedule()
+        reprstr = 'TASK '
+        strs = []
+        for i in range(2):
+            time, name = schedule[i]
+            nextTasks = todo(tasks, schedule)
+            if name == 'gap':
+                if nextTasks is None or len(nextTasks) == 0:
+                    strs.append('Free ({})m'.format(round(time, 2)))
+                else:
+                    task = nextTasks[0]
+                    strs.append('{} {}m/{}m'.format(task.name, round(task.duration, 2), round(time, 2)))
             else:
-                task = nextTasks[0]
-                strs.append('{} {}m/{}m'.format(task.name, round(task.duration, 2), round(time, 2)))
-        else:
-            strs.append('{} {}m'.format(name, round(time, 2)))
-    reprstr += ', '.join(strs)
-    print(reprstr)
+                strs.append('{} {}m'.format(name, round(time, 2)))
+                if remaining > datetime.timedelta(minutes=0):
+                    strs.append('{} left'.format(remaining))
+                    if remaining < datetime.timedelta(minutes=5):
+                        strs.append('*URGENT*')
+        reprstr += ', '.join(strs)
+        print(reprstr)
 
-    pprint(schedule)
+        pprint(schedule)
 
-    subCommand, *text = args
-    print(tasks)
-    commands[subCommand](tasks, schedule, *text)
-    print(tasks)
+        subCommand, *text = args
+        print(tasks)
+        commands[subCommand](tasks, schedule, *text)
+        print(tasks)
 
-    save_tasks(tasks, filename)
+        save_tasks(tasks, filename)
+    except Exception as e:
+        print('Scheduler Error')
+        raise
     return 0
 
 if __name__ == '__main__':

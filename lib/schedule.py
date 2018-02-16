@@ -21,6 +21,8 @@ def get_schedule(n=20):
     service = get_service()
     events  = get_events(service, n=20)
 
+    remaining = 0
+
     if len(events) > 0:
         first = events[0]
         #schedule.append((duration(first), first['summary']))
@@ -33,6 +35,8 @@ def get_schedule(n=20):
         minutes = gap.total_seconds() / 60
         if minutes > 0: # If not in the middle of an event..
             schedule.append((minutes, 'gap'))
+        else:
+            remaining = get_hour(first, 'end') - now
 
     for a, b in zip(events[:-1], events[1:]):
         aEnd   = get_hour(a, 'end')
@@ -47,4 +51,4 @@ def get_schedule(n=20):
         last = events[-1]
         schedule.append((duration(last), last['summary']))
 
-    return schedule
+    return schedule, remaining
