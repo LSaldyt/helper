@@ -16,6 +16,30 @@ filename = __home__ + '/.tasks.pkl'
 #  Auxillary
 #******************************************************************************
 
+
+
+def td_format(td_object):
+   seconds = int(td_object.total_seconds())
+   periods = [
+           ('year',        60*60*24*365),
+           ('month',       60*60*24*30),
+           ('day',         60*60*24),
+           ('hour',        60*60),
+           ('minute',      60),
+           ('second',      1)
+           ]
+
+   strings=[]
+   for period_name,period_seconds in periods:
+       if seconds > period_seconds:
+           period_value , seconds = divmod(seconds,period_seconds)
+           if period_value == 1:
+               strings.append("%s %s" % (period_value, period_name))
+           else:
+               strings.append("%s %ss" % (period_value, period_name))
+   return ", ".join(strings)
+
+
 def get_tasks(filename):
     try:
         with open(filename, 'rb') as infile:
@@ -110,24 +134,26 @@ def main(args):
         #print(filename)
         def color(c):
             return lambda s2 : '%{F' + c + '}' + s2 + '%{F-}'
+        purple = color('#df42f4')
         yellow = color('#f4ff82')
         green  = color('#b3f442')
         red    = color('#f00')
 
-        timef = lambda t : yellow(str(round(time, 2)))
+        timef = lambda t : yellow(str(round(time)))
 
         tasks = get_tasks(filename)
 
         schedule, remaining = get_schedule()
-        reprstr = 'TASK '
+        now = datetime.datetime.today()
+        left = datetime.datetime(2087, 2, 18) - now
+        reprstr = purple(td_format(left)) + ': TASK '
         strs = []
         for i in range(2):
             time, name = schedule[i]
             nextTasks = todo(tasks, schedule)
             if name == 'gap':
                 if nextTasks is None or len(nextTasks) == 0:
-                    ##b3f442
-                    strs.append(green('Free') + ' ({})m'.format(timef(time)))
+                    strs.append(green('Free') + ' {}m'.format(timef(time)))
                 else:
                     task = nextTasks[0]
                     strs.append(green(task.name) + '{}m/{}m'.format(timef(task.duration), timef(time)))
