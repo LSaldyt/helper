@@ -11,46 +11,71 @@ from lib.task     import Task
 __home__ = expanduser("~")
 filename = __home__ + '/.tasks.pkl'
 
+#******************************************************************************
+# Colors
+#******************************************************************************
+
+def color(c):
+    return lambda s2 : '%{F' + c + '}' + str(s2) + '%{F-}'
+white  = lambda s : s
+purple = color('#e091ff')
+yellow = color('#ffce96')
+orange = color('#f4a742')
+green  = color('#72ffc1')
+pink   = color('#ff96b7')
+red    = color('#f00')
+
+purple_shades = list(map(color, 
+                ['#d400ff',
+                 '#d411fc',
+                 '#dd3aff',
+                 '#df55fc',
+                 '#e670ff',
+                 '#eb8eff',
+                 '#f2b7ff']))
+
 
 #******************************************************************************
 #  Auxillary
 #******************************************************************************
 
 
-
-def td_format(td_object):
+def td_format(td_object, brief=True):
    seconds = int(td_object.total_seconds())
    periods = [
-           ('year',        60*60*24*365),
-           ('month',       60*60*24*30),
-           ('day',         60*60*24),
-           ('hour',        60*60),
-           ('minute',      60),
-           ('second',      1)
+           ('year',   60*60*24*365),
+           ('month',  60*60*24*30),
+           ('day',    60*60*24),
+           ('hour',   60*60),
+           ('minute', 60),
+           ('second', 1)
            ]
 
    strings=[]
-   for period_name,period_seconds in periods:
+   for (period_name, period_seconds), tColor in zip(periods, (purple_shades)):
        if seconds > period_seconds:
            period_value , seconds = divmod(seconds,period_seconds)
-           if period_value == 1:
-               strings.append("%s %s" % (period_value, period_name))
-           else:
-               strings.append("%s %ss" % (period_value, period_name))
+           if brief:
+               period_name = period_name[0]
+           elif period_value != 1:
+               period_name = str(period_name) + 's'
+           strings.append("%s%s" % (tColor(period_value), yellow(period_name)))
    return ", ".join(strings)
 
+mformat = lambda s : td_format(datetime.timedelta(minutes=s))
 
-def get_tasks(filename):
+def load(filename):
     try:
         with open(filename, 'rb') as infile:
-            tasks = pickle.load(infile)
+            data = pickle.load(infile)
     except FileNotFoundError as e:
-        tasks = defaultdict(list)
-    return tasks
+        data = dict(tasks=defaultdict(list),
+                    timer=None)
+    return data
 
-def save_tasks(tasks, filename):
+def save(data, filename):
     with open(filename, 'wb') as outfile:
-        pickle.dump(tasks, outfile)
+        pickle.dump(data, outfile)
 
 def get_possible(tasks, duration):
     keys = [key for key in tasks.keys() if key <= duration]
@@ -60,7 +85,7 @@ def get_possible(tasks, duration):
 
 
  #******************************************************************************
- #  Subcommands
+ #  SubtaskCommands
  #******************************************************************************
 
 def add(tasks, schedule, name, duration, precedence=5, finish=None, prereqs=''):
@@ -112,10 +137,19 @@ def done(tasks, schedule):
             break
 
 #******************************************************************************
+# Full data-tree commands
+#******************************************************************************
+
+def timer(data, schedule, amount):
+    print('Called timer')
+    amount = float(amount)
+    data['timer'] = (datetime.datetime.now(), datetime.timedelta(minutes=amount))
+
+#******************************************************************************
 #  Subcommand tree
 #******************************************************************************
 
-commands = {
+taskCommands = {
         'done'  : done,
         'todo'  : todo,
         'clear' : clear,
@@ -125,58 +159,78 @@ commands = {
         'do'    : do
         }
 
+dataCommands = {
+        'timer' : timer
+        }
+
 def main(args):
     try:
         if len(args) == 0:
             print('Please provide arguments to helper script')
             return 0
 
-        #print(filename)
-        def color(c):
-            return lambda s2 : '%{F' + c + '}' + s2 + '%{F-}'
-        purple = color('#df42f4')
-        yellow = color('#f4ff82')
-        green  = color('#b3f442')
-        red    = color('#f00')
-
         timef = lambda t : yellow(str(round(time)))
 
-        tasks = get_tasks(filename)
+        data = load(filename)
+        tasks = data['tasks']
 
         schedule, remaining = get_schedule()
         now = datetime.datetime.today()
         left = datetime.datetime(2087, 2, 18) - now
-        reprstr = purple(td_format(left)) + ': TASK '
+        reprstr = 'TIME ' + td_format(left) + ' TASK '
         strs = []
         for i in range(2):
             time, name = schedule[i]
             nextTasks = todo(tasks, schedule)
             if name == 'gap':
                 if nextTasks is None or len(nextTasks) == 0:
-                    strs.append(green('Free') + ' {}m'.format(timef(time)))
+                    strs.append(green('Free ') + mformat(time))
                 else:
                     task = nextTasks[0]
                     strs.append(green(task.name) + '{}m/{}m'.format(timef(task.duration), timef(time)))
             else:
-                strs.append(green(name) + ' {}m'.format(timef(time)))
+                strs.append(green(name) + ' ' + mformat(time))
                 if remaining > datetime.timedelta(minutes=0):
                     strs.append(green('{} left'.format(remaining)))
                     if remaining < datetime.timedelta(minutes=5):
-                        strs.append(red('*URGENT*'))
+                        strs.append(red('*< 5 minutes*'))
         reprstr += ', '.join(strs)
+
+
+        if data['timer'] is not None:
+            start, duration = data['timer']
+            delta = duration - (datetime.datetime.now() - start)
+            if delta < duration:
+                timerColor = yellow
+                if delta < datetime.timedelta(minutes=5):
+                    timerColor = yellow
+                if delta < datetime.timedelta(minutes=1):
+                    timerColor = orange
+                if delta < datetime.timedelta(seconds=10):
+                    timerColor = red
+                reprstr += timerColor(' TIMER ') + td_format(delta)
+                if delta < datetime.timedelta(0):
+                    data['timer'] = None 
+
         print(reprstr)
 
         pprint(schedule)
 
         subCommand, *text = args
-        print(tasks)
-        commands[subCommand](tasks, schedule, *text)
-        print(tasks)
+        try:
+            taskCommands[subCommand](tasks, schedule, *text)
+        except KeyError:
+            dataCommands[subCommand](data, schedule, *text)
 
-        save_tasks(tasks, filename)
+
+        data['tasks'] = tasks
+
+        print(data)
+
+        save(data, filename)
     except Exception as e:
+        print('Scheduler Error: ')
         print(e)
-        print('Scheduler Error')
         raise
     return 0
 
