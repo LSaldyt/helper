@@ -2,7 +2,7 @@
 from collections import defaultdict
 from pprint      import pprint
 
-import datetime, pickle, sys, os
+import datetime, httplib2, pickle, sys, os
 from os.path import expanduser
 
 from lib.schedule import get_schedule
@@ -141,7 +141,7 @@ def done(tasks, schedule):
 #******************************************************************************
 
 def timer(data, schedule, amount):
-    print('Called timer')
+    #print('Called timer')
     amount = float(amount)
     data['timer'] = (datetime.datetime.now(), datetime.timedelta(minutes=amount))
 
@@ -174,27 +174,31 @@ def main(args):
         data = load(filename)
         tasks = data['tasks']
 
-        schedule, remaining = get_schedule()
+        strs = []
         now = datetime.datetime.today()
         left = datetime.datetime(2087, 2, 18) - now
-        reprstr = 'TIME ' + td_format(left) + ' TASK '
-        strs = []
-        for i in range(2):
-            time, name = schedule[i]
-            nextTasks = todo(tasks, schedule)
-            if name == 'gap':
-                if nextTasks is None or len(nextTasks) == 0:
-                    strs.append(green('Free ') + mformat(time))
+        reprstr = ('TIME ' + td_format(left))
+        try:
+            schedule, remaining = get_schedule()
+            for i in range(2):
+                time, name = schedule[i]
+                nextTasks = todo(tasks, schedule)
+                if name == 'gap':
+                    if nextTasks is None or len(nextTasks) == 0:
+                        strs.append(green('Free ') + mformat(time))
+                    else:
+                        task = nextTasks[0]
+                        strs.append(green(task.name) + '{}m/{}m'.format(timef(task.duration), timef(time)))
                 else:
-                    task = nextTasks[0]
-                    strs.append(green(task.name) + '{}m/{}m'.format(timef(task.duration), timef(time)))
-            else:
-                strs.append(green(name) + ' ' + mformat(time))
-                if remaining > datetime.timedelta(minutes=0):
-                    strs.append(green('{} left'.format(remaining)))
-                    if remaining < datetime.timedelta(minutes=5):
-                        strs.append(red('*< 5 minutes*'))
-        reprstr += ', '.join(strs)
+                    strs.append(green(name) + ' ' + mformat(time))
+                    if remaining > datetime.timedelta(minutes=0):
+                        strs.append(green('{} left'.format(remaining)))
+                        if remaining < datetime.timedelta(minutes=5):
+                            strs.append(red('*< 5 minutes*'))
+            reprstr += (' TASK ' + ', '.join(strs))
+        except httplib2.ServerNotFoundError:
+            reprstr += ' No connection'
+            schedule = []
 
 
         if data['timer'] is not None:
@@ -208,13 +212,13 @@ def main(args):
                     timerColor = orange
                 if delta < datetime.timedelta(seconds=10):
                     timerColor = red
-                reprstr += timerColor(' TIMER ') + td_format(delta)
+                reprstr += (timerColor(' TIMER ') + td_format(delta))
                 if delta < datetime.timedelta(0):
                     data['timer'] = None 
 
         print(reprstr)
 
-        pprint(schedule)
+        #pprint(schedule)
 
         subCommand, *text = args
         try:
@@ -225,7 +229,7 @@ def main(args):
 
         data['tasks'] = tasks
 
-        print(data)
+        #print(data)
 
         save(data, filename)
     except Exception as e:
