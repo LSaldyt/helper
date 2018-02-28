@@ -1,6 +1,6 @@
 import datetime, time
 from pprint import pprint
-from lib import get_service, get_events
+from lib.google import get_service, get_events
 
 def get_time(event, loc):
     s = event[loc].get('dateTime', event[loc].get('date'))
@@ -18,7 +18,7 @@ def duration(event):
 def get_schedule(n=20):
     schedule = []
 
-    service = get_service()
+    service = get_service('calendar')
     events  = get_events(service, n=20)
 
     remaining = datetime.timedelta(minutes=0)

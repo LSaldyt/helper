@@ -7,6 +7,7 @@ from os.path import expanduser
 
 from lib.schedule import get_schedule
 from lib.task     import Task
+from lib.upload   import upload
 
 __home__ = expanduser("~")
 filename = __home__ + '/.tasks.pkl'
@@ -165,9 +166,9 @@ dataCommands = {
 
 def main(args):
     try:
-        if len(args) == 0:
-            print('Please provide arguments to helper script')
-            return 0
+        #if len(args) == 0:
+        #    #print('Please provide arguments to helper script')
+        #    #return 0
 
         timef = lambda t : yellow(str(round(time)))
 
@@ -239,4 +240,12 @@ def main(args):
     return 0
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+
+    try:
+        #upload('test.jpg')
+        #1/0
+        sys.exit(main(sys.argv[1:]))
+    except Exception as e:
+        print('Scheduler Error')
+        print(e)
+        sys.exit(0) # Disable flashing in i3 interface

@@ -1,1 +1,2 @@
-from .gcal import *
+from .google import *
+from .upload import upload
