@@ -122,3 +122,38 @@ def create_event(service):
 
     event = service.events().insert(calendarId='primary', body=event).execute()
     return event
+
+def get_files(drive_service, limit=None):
+    if limit is None:
+        results = drive_service.files().list(
+            fields="nextPageToken, files(id, name)").execute()
+    else:
+        results = drive_service.files().list(
+            pageSize=limit,fields="nextPageToken, files(id, name)").execute()
+    return results.get('files', [])
+
+def list_files(drive_service, limit=None):
+    items = get_files(drive_service, limit=limit)
+    if not items:
+        print('No files found.')
+    else:
+        print('Files:')
+        for item in items:
+            print('{0} ({1})'.format(item['name'], item['id']))
+
+def get_with_name(drive_service, name):
+    name = os.path.basename(name)
+    items = get_files(drive_service, limit=None)
+    if not items:
+        print('No files found.')
+        return []
+    else:
+        print('Files:')
+        print(name)
+        remaining = [item for item in items if name.lower() in item['name'].lower()]
+        print(remaining)
+        return remaining
+
+def exists(drive_service, name):
+    files = get_with_name(drive_service, name)
+    return files != []

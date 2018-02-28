@@ -7,10 +7,13 @@ from os.path import expanduser
 
 from lib.schedule import get_schedule
 from lib.task     import Task
-from lib.upload   import upload
+
+from lib.google import get_service, list_files, get_with_name, exists
+from lib.upload import upload, update
+from lib.download import download
 
 __home__ = expanduser("~")
-filename = __home__ + '/.tasks.pkl'
+filename = __home__ + '/.helper-pickle-json.pkl'
 
 #******************************************************************************
 # Colors
@@ -65,7 +68,7 @@ def td_format(td_object, brief=True):
 
 mformat = lambda s : td_format(datetime.timedelta(minutes=s))
 
-def load(filename):
+def load(service, filename):
     try:
         with open(filename, 'rb') as infile:
             data = pickle.load(infile)
@@ -74,9 +77,20 @@ def load(filename):
                     timer=None)
     return data
 
-def save(data, filename):
+def save(service, data, filename):
     with open(filename, 'wb') as outfile:
         pickle.dump(data, outfile)
+    if not exists(service, filename):
+        upload(service, filename, mimetype='application/octet-stream')
+    else:
+        # def update(service, file_id, new_filename, new_revision=True):
+        filedicts = get_with_name(service, filename)
+        if len(filedicts) == 1:
+            file_id = filedicts[0]['id']
+            update(service, file_id, filename)
+        else:
+            print(filedicts)
+            1/0
 
 def get_possible(tasks, duration):
     keys = [key for key in tasks.keys() if key <= duration]
@@ -142,7 +156,6 @@ def done(tasks, schedule):
 #******************************************************************************
 
 def timer(data, schedule, amount):
-    #print('Called timer')
     amount = float(amount)
     data['timer'] = (datetime.datetime.now(), datetime.timedelta(minutes=amount))
 
@@ -166,13 +179,14 @@ dataCommands = {
 
 def main(args):
     try:
-        #if len(args) == 0:
-        #    #print('Please provide arguments to helper script')
-        #    #return 0
+        service = get_service('drive')
+
+        if len(args) == 0:
+            print('Please provide arguments to helper script')
 
         timef = lambda t : yellow(str(round(time)))
 
-        data = load(filename)
+        data = load(service, filename)
         tasks = data['tasks']
 
         strs = []
@@ -232,7 +246,7 @@ def main(args):
 
         #print(data)
 
-        save(data, filename)
+        save(service, data, filename)
     except Exception as e:
         print('Scheduler Error: ')
         print(e)
@@ -242,10 +256,10 @@ def main(args):
 if __name__ == '__main__':
 
     try:
-        #upload('test.jpg')
-        #1/0
+        #service = get_service('drive')
+        #print(get_with_name(service, 'Boston dynamics'))
         sys.exit(main(sys.argv[1:]))
     except Exception as e:
         print('Scheduler Error')
         print(e)
-        sys.exit(0) # Disable flashing in i3 interface
+        sys.exit(1)

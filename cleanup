@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+from lib.google import get_service
+from lib.google import get_with_name
+
+import sys
+
+def main(args):
+    name = args[0]
+    if (input('Are you sure you want to delete all drive files containing {}?'.format(name)).lower() 
+            in ['yes', 'y']):
+        drive = get_service('drive')
+        files = get_with_name(drive, name)
+        print(files)
+        if files is not None:
+            for filedict in files:
+                print('Deleting:')
+                #print(filedict)
+                drive.files().delete(fileId=filedict['id']).execute()
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))
+
+
