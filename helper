@@ -9,7 +9,7 @@ from lib.schedule import get_schedule
 from lib.task     import Task
 
 from lib.google import get_service, list_files, get_with_name, exists
-from lib.upload import upload, update
+from lib.upload import upload, update, recreate, cleanup
 from lib.download import download
 
 __home__ = expanduser("~")
@@ -75,22 +75,15 @@ def load(service, filename):
     except FileNotFoundError as e:
         data = dict(tasks=defaultdict(list),
                     timer=None)
+    
+    #file_id = get_with_name(service, filename)[0]['id']
+    #download(service, file_id)
     return data
 
 def save(service, data, filename):
     with open(filename, 'wb') as outfile:
         pickle.dump(data, outfile)
-    if not exists(service, filename):
-        upload(service, filename, mimetype='application/octet-stream')
-    else:
-        # def update(service, file_id, new_filename, new_revision=True):
-        filedicts = get_with_name(service, filename)
-        if len(filedicts) == 1:
-            file_id = filedicts[0]['id']
-            update(service, file_id, filename)
-        else:
-            print(filedicts)
-            1/0
+    #recreate(service, filename)
 
 def get_possible(tasks, duration):
     keys = [key for key in tasks.keys() if key <= duration]

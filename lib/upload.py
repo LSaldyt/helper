@@ -1,17 +1,28 @@
 from apiclient.http import MediaFileUpload
 from apiclient import errors
 import os.path
+from .google import get_with_name
 
-def upload(service, filepath, mimetype='image/jpeg'):
+def cleanup(drive, name):
+    files = get_with_name(drive, name)
+    for filedict in files:
+        print('Deleting:')
+        print(filedict)
+        drive.files().delete(fileId=filedict['id']).execute()
+
+def upload(service, filepath, mimetype='application/octet-stream'):
     file_metadata = {'name': os.path.basename(filepath)}
     media = MediaFileUpload(filepath,
                         mimetype=mimetype)
 
-    #print(dir(service.files()))
     file = service.files().create(body=file_metadata,
         				media_body=media,
         				fields='id').execute()
     print('File ID: %s' % file.get('id'))
+
+def recreate(service, filepath, mimetype='application/octet-stream'):
+    cleanup(service, filepath)
+    upload(service, filepath, mimetype)
 
 def update(service, file_id, new_filename, new_revision=True):
   """Update an existing file's metadata and content.
