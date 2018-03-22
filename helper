@@ -20,7 +20,9 @@ filename = __home__ + '/.helper-pickle-json.pkl'
 #******************************************************************************
 
 def color(c):
+    #return lambda s : s
     return lambda s2 : '%{F' + c + '}' + str(s2) + '%{F-}'
+
 white  = lambda s : s
 purple = color('#e091ff')
 yellow = color('#ffce96')
@@ -37,6 +39,8 @@ purple_shades = list(map(color,
                  '#e670ff',
                  '#eb8eff',
                  '#f2b7ff']))
+
+purple_shades = list(map(color, ['#fff'] * 7))
 
 
 #******************************************************************************
@@ -185,24 +189,26 @@ def main(args):
         strs = []
         now = datetime.datetime.today()
         left = datetime.datetime(2087, 2, 18) - now
-        reprstr = ('TIME ' + td_format(left))
+        reprstr = '' #('TIME ' + td_format(left))
         try:
             schedule, remaining = get_schedule()
-            for i in range(2):
+            for i in range(4):
                 time, name = schedule[i]
                 nextTasks = todo(tasks, schedule)
                 if name == 'gap':
                     if nextTasks is None or len(nextTasks) == 0:
-                        strs.append(green('Free ') + mformat(time))
+                        strs.append('Free ' + mformat(time))
+                        if time < 7:
+                            strs.append(red('*transition*'))
                     else:
                         task = nextTasks[0]
-                        strs.append(green(task.name) + '{}m/{}m'.format(timef(task.duration), timef(time)))
+                        strs.append(task.name + '{}m/{}m'.format(timef(task.duration), timef(time)))
                 else:
-                    strs.append(green(name) + ' ' + mformat(time))
+                    strs.append(name + ' ' + mformat(time))
                     if remaining > datetime.timedelta(minutes=0):
-                        strs.append(green('{} left'.format(remaining)))
-                        if remaining < datetime.timedelta(minutes=5):
-                            strs.append(red('*< 5 minutes*'))
+                        strs.append('{} left'.format(remaining))
+                        if remaining < datetime.timedelta(minutes=7):
+                            strs.append(red('*transition*'))
             reprstr += (' TASK ' + ', '.join(strs))
         except httplib2.ServerNotFoundError:
             reprstr += ' No connection'
@@ -248,11 +254,11 @@ def main(args):
 
 if __name__ == '__main__':
 
-    try:
-        #service = get_service('drive')
-        #print(get_with_name(service, 'Boston dynamics'))
-        sys.exit(main(sys.argv[1:]))
-    except Exception as e:
-        print('Scheduler Error')
-        print(e)
-        sys.exit(1)
+    #try:
+    #service = get_service('drive')
+    #print(get_with_name(service, 'Boston dynamics'))
+    sys.exit(main(sys.argv[1:]))
+    #except Exception as e:
+    #    print('Scheduler Error')
+    #    print(e)
+    #    sys.exit(1)
