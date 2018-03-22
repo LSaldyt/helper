@@ -205,10 +205,11 @@ def main(args):
                         strs.append(task.name + '{}m/{}m'.format(timef(task.duration), timef(time)))
                 else:
                     strs.append(name + ' ' + mformat(time))
-                    if remaining > datetime.timedelta(minutes=0):
-                        strs.append('{} left'.format(remaining))
-                        if remaining < datetime.timedelta(minutes=7):
-                            strs.append(red('*transition*'))
+                    if i < 2:
+                        if remaining > datetime.timedelta(minutes=0):
+                            strs.append('{} left'.format(remaining))
+                            if remaining < datetime.timedelta(minutes=7):
+                                strs.append(red('*transition*'))
             reprstr += (' TASK ' + ', '.join(strs))
         except httplib2.ServerNotFoundError:
             reprstr += ' No connection'
